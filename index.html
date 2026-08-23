@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quvvathul Islam Arabic College - Sports Portal 2026</title>
+    <title>NOVA 2K26 - Quvvathul Islam Arabic College Sports Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Firebase (compat SDK - no build step needed) -->
@@ -147,6 +147,70 @@
         .modal-overlay.active { display: flex; }
         .modal-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 28px; width: 100%; max-width: 420px; }
 
+        /* BRAND HERO - NOVA 2K26 */
+        .brand-hero {
+            text-align: center;
+            padding: 34px 20px 18px;
+            position: relative;
+            z-index: 1;
+        }
+        .brand-title {
+            font-size: clamp(38px, 9vw, 72px);
+            font-weight: 800;
+            letter-spacing: 4px;
+            line-height: 1;
+            margin: 0;
+            background: linear-gradient(180deg, #fffbe8 0%, var(--accent) 55%, #d97706 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            transform: perspective(600px) rotateX(10deg);
+            text-shadow:
+                0 1px 0 #d97706,
+                0 2px 0 #c2670a,
+                0 3px 0 #a8590a,
+                0 4px 0 #8f4b08,
+                0 5px 0 #763e07,
+                0 6px 8px rgba(0,0,0,0.55),
+                0 12px 24px rgba(0,0,0,0.45);
+            animation: brandGlow 3.2s ease-in-out infinite alternate;
+        }
+        @keyframes brandGlow {
+            from { filter: drop-shadow(0 0 6px var(--accent-glow)); }
+            to { filter: drop-shadow(0 0 26px var(--accent-glow)); }
+        }
+        .brand-slogan {
+            margin-top: 10px;
+            font-size: clamp(12px, 2.4vw, 18px);
+            font-weight: 700;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: var(--secondary);
+            text-shadow: 0 2px 10px rgba(16, 185, 129, 0.5);
+        }
+
+        /* ANIMATED LIVE-SCOREBOARD BACKGROUND (admin uploadable) */
+        body.scoreboard-bg-active::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image: var(--bg-anim-url);
+            background-size: cover;
+            background-position: center;
+            opacity: 0.32;
+            z-index: 0;
+            animation: kenburns 20s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes kenburns {
+            0%   { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.18) translate(-2%, -2%); }
+        }
+        header, nav, #announcementBar, .container, .brand-hero { position: relative; z-index: 1; }
+        .bg-preview-wrap { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .bg-preview-wrap img { width: 70px; height: 46px; object-fit: cover; border-radius: 6px; border: 1px solid var(--card-border); }
+
         /* PRINT MODE */
         @media print {
             body { background: #fff !important; color: #000 !important; }
@@ -171,7 +235,7 @@
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
                 <label>Username</label>
-                <input type="text" id="loginUser" placeholder="e.g. TEAM-F, TEAM-H or MSH" required>
+                <input type="text" id="loginUser" placeholder="TEAM-F (Phantom Rise), TEAM-H (Thunder Roars) or MSH" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -195,13 +259,18 @@
 <header>
     <div class="header-title">
         <h1>Quvvathul Islam Arabic College</h1>
-        <p>Annual Sports Meet 2026</p>
+        <p>Nova 2k26 • Annual Sports Meet</p>
     </div>
     <div style="display:flex; align-items:center; gap:12px;">
         <span class="user-badge" id="currentUserBadge">Not Logged In</span>
         <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
     </div>
 </header>
+
+<div class="brand-hero">
+    <div class="brand-title">NOVA 2K26</div>
+    <div class="brand-slogan">⚡ Where The Legend Strikes ⚡</div>
+</div>
 
 <div id="announcementBar" style="display:none;">
     <span>📢</span>
@@ -214,7 +283,7 @@
     <button class="nav-btn active" id="navStudents" onclick="switchTab('studentsTab')">👥 Student Program Mapping</button>
     <button class="nav-btn admin-only" id="navScoreEntry" onclick="switchTab('scoreEntryTab')">⚡ Point Entry Terminal</button>
     <button class="nav-btn admin-only" id="navPrograms" onclick="switchTab('programsTab')">📜 Master Programs (Admin)</button>
-    <button class="nav-btn" id="navSchedule" onclick="switchTab('scheduleTab')">📅 Event Schedule</button>
+    <button class="nav-btn admin-only" id="navSchedule" onclick="switchTab('scheduleTab')">📅 Event Schedule</button>
 </nav>
 
 <div class="container">
@@ -273,7 +342,7 @@
                     <div class="grid-2">
                         <div class="form-group">
                             <label>House</label>
-                            <select id="newStdHouse"><option>House A</option><option>House B</option></select>
+                            <select id="newStdHouse"><option value="House A">House A – The Phantom Rise</option><option value="House B">House B – The Thunder Roars</option></select>
                         </div>
                         <div class="form-group">
                             <label>Category</label>
@@ -317,14 +386,24 @@
 
     <!-- LIVE SCOREBOARD TAB (ADMIN ONLY) -->
     <div id="scoreboardTab" class="tab-content admin-only">
+        <div class="card no-print">
+            <h2>🎬 Live Scoreboard Background Animation</h2>
+            <p style="color:var(--text-sub); font-size:13px; margin-bottom:12px;">Upload a sports photo/GIF to run as an animated background behind the Live Scoreboard. Keep it under ~1MB for smooth syncing.</p>
+            <input type="file" accept="image/*,.gif" id="bgAnimUpload" onchange="handleBgAnimUpload(event)">
+            <div class="bg-preview-wrap" id="bgPreviewWrap" style="display:none;">
+                <img id="bgPreviewImg" alt="Background preview">
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeBgAnim()">Remove Background</button>
+            </div>
+        </div>
+
         <div class="grid-2">
             <div class="house-card" style="background: rgba(30, 58, 138, 0.3);">
-                <h2>House A (TEAM-F)</h2>
+                <h2>🔥 The Phantom Rise <span style="font-size:12px; color:var(--text-sub); font-weight:600;">(House A)</span></h2>
                 <div class="score-val" id="house1Points">0</div>
                 <p style="color: var(--text-sub);">Overall Points</p>
             </div>
             <div class="house-card" style="background: rgba(127, 29, 29, 0.3);">
-                <h2>House B (TEAM-H)</h2>
+                <h2>⚡ The Thunder Roars <span style="font-size:12px; color:var(--text-sub); font-weight:600;">(House B)</span></h2>
                 <div class="score-val" id="house2Points">0</div>
                 <p style="color: var(--text-sub);">Overall Points</p>
             </div>
@@ -396,8 +475,8 @@
                     <div class="form-group" id="houseSelectGroup" style="display:none;">
                         <label>Winning House (Group Event)</label>
                         <select id="entryHouse">
-                            <option value="House A">House A</option>
-                            <option value="House B">House B</option>
+                            <option value="House A">House A – The Phantom Rise</option>
+                            <option value="House B">House B – The Thunder Roars</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -468,8 +547,8 @@
         </div>
     </div>
 
-    <!-- EVENT SCHEDULE TAB (viewable by all logged-in users) -->
-    <div id="scheduleTab" class="tab-content">
+    <!-- EVENT SCHEDULE TAB (ADMIN ONLY) -->
+    <div id="scheduleTab" class="tab-content admin-only">
         <div class="card admin-only">
             <h2>➕ Add Schedule Entry</h2>
             <form onsubmit="addScheduleEntry(event)" style="display:flex; gap:12px; flex-wrap:wrap;">
@@ -643,6 +722,7 @@
         results: [],
         schedule: [],
         announcement: "",
+        backgroundImage: null,
         currentUser: null
     };
 
@@ -670,9 +750,14 @@
        This means no password is ever stored in this file, and
        Google's infrastructure -- not client-side JS -- checks it.
     ========================================================= */
+    // Display names for each house/team. Login usernames (TEAM-F / TEAM-H / MSH) stay
+    // the same for backward compatibility, only the shown team names have changed.
+    const HOUSE_NAMES = { "House A": "The Phantom Rise", "House B": "The Thunder Roars" };
+    function teamName(house) { return HOUSE_NAMES[house] || house || '-'; }
+
     const USERNAME_MAP = {
-        "TEAM-F": { email: "team-f@qiac.local", role: "TEAM-F", house: "House A", label: "Team F (House A)" },
-        "TEAM-H": { email: "team-h@qiac.local", role: "TEAM-H", house: "House B", label: "Team H (House B)" },
+        "TEAM-F": { email: "team-f@qiac.local", role: "TEAM-F", house: "House A", label: "The Phantom Rise (House A)" },
+        "TEAM-H": { email: "team-h@qiac.local", role: "TEAM-H", house: "House B", label: "The Thunder Roars (House B)" },
         "MSH":    { email: "msh@qiac.local",    role: "ADMIN",  house: "ALL",     label: "Admin (MSH)" }
     };
 
@@ -804,13 +889,20 @@
                 db.announcement = doc.exists ? (doc.data().text || "") : "";
                 document.getElementById('announcementText').textContent = db.announcement;
             });
+            dbRef.collection('meta').doc('background').onSnapshot(doc => {
+                db.backgroundImage = doc.exists ? (doc.data().image || null) : null;
+                updateBgPreview();
+                if (document.getElementById('scoreboardTab').classList.contains('active')) applyScoreboardBackground();
+            });
         } else {
             db.students = JSON.parse(localStorage.getItem('qiac_v8_students')) || defaultStudents;
             db.programs = JSON.parse(localStorage.getItem('qiac_v8_programs')) || defaultPrograms;
             db.results = JSON.parse(localStorage.getItem('qiac_v8_results')) || [];
             db.schedule = JSON.parse(localStorage.getItem('qiac_v8_schedule')) || [];
             db.announcement = localStorage.getItem('qiac_v8_announcement') || "";
+            db.backgroundImage = localStorage.getItem('qiac_v8_bg') || null;
             document.getElementById('announcementText').textContent = db.announcement;
+            updateBgPreview();
             populateProgramDropdowns();
             updateAllViews();
         }
@@ -822,6 +914,8 @@
         localStorage.setItem('qiac_v8_results', JSON.stringify(db.results));
         localStorage.setItem('qiac_v8_schedule', JSON.stringify(db.schedule));
         localStorage.setItem('qiac_v8_announcement', db.announcement);
+        if (db.backgroundImage) localStorage.setItem('qiac_v8_bg', db.backgroundImage);
+        else localStorage.removeItem('qiac_v8_bg');
         updateAllViews();
     }
 
@@ -830,8 +924,10 @@
     ========================================================= */
     function switchTab(tabId) {
         const isAdmin = db.currentUser && db.currentUser.role === "ADMIN";
-        if (!isAdmin && tabId !== "studentsTab" && tabId !== "scheduleTab") {
-            toast("Access Denied! Teams may only view Student Mapping & Schedule.", true);
+        // Teams only ever get Student Program Mapping. Everything else (Live Scoreboard,
+        // Point Entry, Master Programs, Event Schedule) is strictly Admin-controlled.
+        if (!isAdmin && tabId !== "studentsTab") {
+            toast("Access Denied! Team logins can only view Student Program Mapping.", true);
             return;
         }
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -840,7 +936,13 @@
         const targetTab = document.getElementById(tabId);
         if (targetTab) targetTab.classList.add('active');
 
-        if (tabId === 'scoreboardTab') { document.getElementById('navScoreboard').classList.add('active'); renderCharts(); }
+        if (tabId === 'scoreboardTab') {
+            document.getElementById('navScoreboard').classList.add('active');
+            renderCharts();
+            applyScoreboardBackground();
+        } else {
+            document.body.classList.remove('scoreboard-bg-active');
+        }
         if (tabId === 'studentsTab') document.getElementById('navStudents').classList.add('active');
         if (tabId === 'scoreEntryTab') document.getElementById('navScoreEntry').classList.add('active');
         if (tabId === 'programsTab') document.getElementById('navPrograms').classList.add('active');
@@ -946,7 +1048,7 @@
             <div class="form-group"><label>Name</label><input type="text" id="editStdName" value="${student.name}"></div>
             <div class="grid-2">
                 <div class="form-group"><label>House</label>
-                    <select id="editStdHouse"><option ${student.house==='House A'?'selected':''}>House A</option><option ${student.house==='House B'?'selected':''}>House B</option></select>
+                    <select id="editStdHouse"><option value="House A" ${student.house==='House A'?'selected':''}>House A – The Phantom Rise</option><option value="House B" ${student.house==='House B'?'selected':''}>House B – The Thunder Roars</option></select>
                 </div>
                 <div class="form-group"><label>Category</label>
                     <select id="editStdCategory"><option ${student.category==='Senior'?'selected':''}>Senior</option><option ${student.category==='Junior'?'selected':''}>Junior</option></select>
@@ -1152,6 +1254,78 @@
     }
 
     /* =========================================================
+       LIVE SCOREBOARD BACKGROUND ANIMATION (admin uploadable)
+    ========================================================= */
+    function handleBgAnimUpload(event) {
+        if (!db.currentUser || db.currentUser.role !== "ADMIN") return;
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            toast("Please upload an image or GIF file.", true);
+            event.target.value = '';
+            return;
+        }
+        if (file.size > 1.5 * 1024 * 1024) {
+            toast("Image is large — for smooth live sync keep it under ~1MB.", true);
+        }
+        const reader = new FileReader();
+        reader.onload = async function (ev) {
+            const dataUrl = ev.target.result;
+            db.backgroundImage = dataUrl;
+            if (fbReady) {
+                try {
+                    await dbRef.collection('meta').doc('background').set({ image: dataUrl, updatedAt: Date.now() });
+                } catch (err) {
+                    console.error(err);
+                    toast("Upload failed — image likely too large for live sync. Try a smaller file.", true);
+                    return;
+                }
+            } else {
+                localStorage.setItem('qiac_v8_bg', dataUrl);
+            }
+            updateBgPreview();
+            applyScoreboardBackground();
+            toast("Live Scoreboard background updated! 🎬");
+        };
+        reader.readAsDataURL(file);
+        event.target.value = '';
+    }
+
+    function removeBgAnim() {
+        if (!db.currentUser || db.currentUser.role !== "ADMIN") return;
+        db.backgroundImage = null;
+        if (fbReady) {
+            dbRef.collection('meta').doc('background').delete();
+        } else {
+            localStorage.removeItem('qiac_v8_bg');
+        }
+        updateBgPreview();
+        applyScoreboardBackground();
+        toast("Background animation removed.");
+    }
+
+    function updateBgPreview() {
+        const wrap = document.getElementById('bgPreviewWrap');
+        const img = document.getElementById('bgPreviewImg');
+        if (!wrap || !img) return;
+        if (db.backgroundImage) {
+            img.src = db.backgroundImage;
+            wrap.style.display = 'flex';
+        } else {
+            wrap.style.display = 'none';
+        }
+    }
+
+    function applyScoreboardBackground() {
+        if (db.backgroundImage) {
+            document.documentElement.style.setProperty('--bg-anim-url', `url(${db.backgroundImage})`);
+            document.body.classList.add('scoreboard-bg-active');
+        } else {
+            document.body.classList.remove('scoreboard-bg-active');
+        }
+    }
+
+    /* =========================================================
        CERTIFICATE GENERATOR
     ========================================================= */
     function positionLabel(pts) {
@@ -1248,7 +1422,7 @@
             stdBody.innerHTML += `
                 <tr>
                     <td><strong>${s.name}</strong></td>
-                    <td>${s.house}</td>
+                    <td>${teamName(s.house)}</td>
                     <td><span class="badge badge-junior">${s.category}</span></td>
                     <td>${progsHtml}</td>
                     <td><strong style="color:var(--accent);">${s.pts} Pts</strong></td>
@@ -1274,7 +1448,7 @@
                 <tr>
                     <td>#${idx + 1}</td>
                     <td><strong>${s.name}</strong></td>
-                    <td>${s.house}</td>
+                    <td>${teamName(s.house)}</td>
                     <td>${s.category}</td>
                     <td>${(s.programs || []).join(', ') || '-'}</td>
                     <td><strong style="color:var(--accent);">${s.pts}</strong></td>
@@ -1283,8 +1457,8 @@
 
             // ---- Category leaderboards ----
             const bySeniority = cat => [...db.students].filter(s => s.category === cat).map(s => ({ ...s, pts: studentScores[s.id] || 0 })).sort((a,b) => b.pts - a.pts).slice(0,5);
-            document.getElementById('seniorLeaderboardBody').innerHTML = bySeniority('Senior').map((s,i) => `<tr><td>#${i+1}</td><td>${s.name}</td><td>${s.house}</td><td>${s.pts}</td></tr>`).join('');
-            document.getElementById('juniorLeaderboardBody').innerHTML = bySeniority('Junior').map((s,i) => `<tr><td>#${i+1}</td><td>${s.name}</td><td>${s.house}</td><td>${s.pts}</td></tr>`).join('');
+            document.getElementById('seniorLeaderboardBody').innerHTML = bySeniority('Senior').map((s,i) => `<tr><td>#${i+1}</td><td>${s.name}</td><td>${teamName(s.house)}</td><td>${s.pts}</td></tr>`).join('');
+            document.getElementById('juniorLeaderboardBody').innerHTML = bySeniority('Junior').map((s,i) => `<tr><td>#${i+1}</td><td>${s.name}</td><td>${teamName(s.house)}</td><td>${s.pts}</td></tr>`).join('');
 
             // ---- Result logs ----
             let logs = [...db.results];
@@ -1295,7 +1469,7 @@
                 <tr>
                     <td>${r.category}</td>
                     <td>${r.program}</td>
-                    <td>${r.studentName} (${r.house})</td>
+                    <td>${r.studentName} (${teamName(r.house)})</td>
                     <td>+${r.points}</td>
                     <td>${r.studentId != null ? `<button class="btn btn-sm" onclick="generateCertificate('${(r.studentName||'').replace(/'/g,"\\'")}', '${r.program.replace(/'/g,"\\'")}', ${r.points})">🖨️</button>` : '-'}</td>
                     <td><button class="btn btn-danger btn-sm" onclick="deleteResult('${r.id}')">Undo</button></td>
