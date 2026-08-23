@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quvvathul Islam Arabic College - Sports Portal 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase (compat SDK - no build step needed) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- Chart.js for visual comparisons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.4);
+            --secondary: #10b981;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            color: var(--text-main);
+            padding-bottom: 40px;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+        }
+
+        /* LOGIN OVERLAY */
+        #loginOverlay {
+            position: fixed; inset: 0; background: rgba(3, 7, 18, 0.95);
+            backdrop-filter: blur(15px); z-index: 2000;
+            display: flex; justify-content: center; align-items: center; padding: 20px;
+        }
+        .login-card {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            padding: 32px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        #loginError { color: var(--danger); font-size: 13px; margin-top: 10px; display: none; }
+        #loginStatus { color: var(--text-sub); font-size: 12px; margin-top: 14px; }
+
+        header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px); border-bottom: 1px solid var(--card-border);
+            padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+        }
+        .header-title h1 { font-size: 22px; font-weight: 800; color: #fff; }
+        .header-title p { font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; }
+        .user-badge { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; }
+
+        /* ANNOUNCEMENT BANNER */
+        #announcementBar {
+            background: linear-gradient(90deg, rgba(245,158,11,0.18), rgba(16,185,129,0.12));
+            border-bottom: 1px solid var(--card-border);
+            padding: 10px 20px; text-align: center; font-size: 13px; font-weight: 600;
+            display: flex; justify-content: center; align-items: center; gap: 10px; position: sticky; top: 76px; z-index: 90;
+        }
+        #announcementText { color: var(--text-main); }
+        #announcementText:empty::before { content: "No announcements yet."; color: var(--text-sub); font-weight: 400; }
+        #announcementEditBtn { display: none; }
+
+        nav { display: flex; justify-content: center; gap: 10px; padding: 16px; flex-wrap: wrap; }
+        nav button {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
+            color: var(--text-sub); padding: 10px 20px; font-weight: 600; font-size: 13px;
+            border-radius: 30px; cursor: pointer; transition: all 0.3s ease;
+        }
+        nav button.active, nav button:hover {
+            background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent-glow); border-color: var(--accent);
+        }
+
+        .container { max-width: 1280px; margin: 20px auto; padding: 0 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card {
+            background: var(--card-bg); border-radius: 16px; padding: 24px; margin-bottom: 24px;
+            border: 1px solid var(--card-border); box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .card h2 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 16px; text-align: left; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: var(--text-sub); }
+        input, select {
+            width: 100%; padding: 12px 14px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border); border-radius: 8px; color: #fff; font-size: 14px; outline: none;
+        }
+        select option { background: #0f172a; color: #fff; }
+
+        .checkbox-group {
+            max-height: 250px; overflow-y: auto; border: 1px solid var(--card-border);
+            border-radius: 8px; padding: 12px; background: rgba(0, 0, 0, 0.2); display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .checkbox-item input { width: auto; accent-color: var(--accent); }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent), #d97706); color: #000;
+            padding: 12px 24px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px var(--accent-glow); }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 13px; }
+        table th { background: rgba(255, 255, 255, 0.03); color: var(--text-sub); font-weight: 700; text-transform: uppercase; font-size: 11px; cursor: pointer; user-select: none; }
+        table th.sortable:hover { color: var(--accent); }
+        table th .sort-arrow { font-size: 10px; opacity: 0.6; margin-left: 4px; }
+
+        .badge { display: inline-block; padding: 4px 8px; font-size: 11px; font-weight: 700; border-radius: 12px; }
+        .badge-senior { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-junior { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+        .house-card { text-align: center; padding: 30px; border-radius: 16px; border: 1px solid var(--card-border); }
+        .score-val { font-size: 60px; font-weight: 800; color: var(--accent); }
+        .admin-only { display: none; }
+
+        .search-bar { display: flex; gap: 10px; margin-bottom: 14px; }
+        .search-bar input { flex: 1; }
+
+        .chart-box { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 16px; }
+
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--card-bg); border: 1px solid var(--accent); color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.3s ease; }
+        .toast.error { border-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(3,7,18,0.85); backdrop-filter: blur(6px); z-index: 2500; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 28px; width: 100%; max-width: 420px; }
+
+        /* PRINT MODE */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            header, nav, #announcementBar, .no-print, .admin-only form, .btn { display: none !important; }
+            .card { box-shadow: none !important; border: 1px solid #ccc !important; background: #fff !important; }
+            table th, table td { color: #000 !important; border-color: #ccc !important; }
+            .score-val, .card h2 { color: #000 !important; }
+            .tab-content { display: none !important; }
+            .tab-content.print-active { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- LOGIN MODAL -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2 style="margin-bottom: 8px; color: #fff;">Portal Access Login</h2>
+        <p style="color: var(--text-sub); font-size: 13px; margin-bottom: 24px;">Quvvathul Islam Arabic College</p>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginUser" placeholder="e.g. TEAM-F, TEAM-H or MSH" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Enter Password" required>
+            </div>
+            <button type="submit" class="btn" id="loginBtn" style="width: 100%; margin-top: 10px;">Login to Portal</button>
+        </form>
+        <div id="loginError"></div>
+        <div id="loginStatus">Connecting to portal...</div>
+    </div>
+</div>
+
+<!-- CERTIFICATE PRINT TEMPLATE (hidden, filled dynamically) -->
+<div id="certTemplate" style="display:none;"></div>
+
+<!-- CONFIRM / EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-card" id="modalContent"></div>
+</div>
+
+<header>
+    <div class="header-title">
+        <h1>Quvvathul Islam Arabic College</h1>
+        <p>Annual Sports Meet 2026</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+        <span class="user-badge" id="currentUserBadge">Not Logged In</span>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<div id="announcementBar" style="display:none;">
+    <span>📢</span>
+    <span id="announcementText"></span>
+    <button class="btn btn-secondary btn-sm admin-only" id="announcementEditBtn" onclick="openAnnouncementModal()">Edit</button>
+</div>
+
+<nav>
+    <button class="nav-btn admin-only" id="navScoreboard" onclick="switchTab('scoreboardTab')">🏆 Live Scoreboard</button>
+    <button class="nav-btn active" id="navStudents" onclick="switchTab('studentsTab')">👥 Student Program Mapping</button>
+    <button class="nav-btn admin-only" id="navScoreEntry" onclick="switchTab('scoreEntryTab')">⚡ Point Entry Terminal</button>
+    <button class="nav-btn admin-only" id="navPrograms" onclick="switchTab('programsTab')">📜 Master Programs (Admin)</button>
+    <button class="nav-btn" id="navSchedule" onclick="switchTab('scheduleTab')">📅 Event Schedule</button>
+</nav>
+
+<div class="container">
+
+    <!-- STUDENT DIRECTORY & MAPPING TAB -->
+    <div id="studentsTab" class="tab-content active">
+        <div class="grid-2">
+            <div class="card">
+                <h2>✍️ Assign Programs to Student</h2>
+                <form onsubmit="saveStudentProgramMapping(event)">
+                    <div class="form-group">
+                        <label>1. Select Category</label>
+                        <select id="mapCategory" onchange="loadStudentsAndProgramsByCategory()" required>
+                            <option value="">-- Choose Category --</option>
+                            <option value="Senior">Senior</option>
+                            <option value="Junior">Junior</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>2. Select Student</label>
+                        <select id="mapStudentSelect" onchange="renderProgramCheckboxes()" required>
+                            <option value="">-- First Select Category --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>3. Select Program to Assign (Drop-down)</label>
+                        <select id="mapProgramSelect">
+                            <option value="">-- Select Program --</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="addSelectedProgramToStudent()" style="margin-top: 8px; width: 100%;">+ Add Selected Program</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Selected Programs Checklist</label>
+                        <div class="checkbox-group" id="programCheckboxes"></div>
+                    </div>
+
+                    <button type="submit" class="btn" style="width:100%;">Save Program Mapping</button>
+                </form>
+            </div>
+
+            <div class="card admin-only">
+                <h2>⚙️ Admin Tools</h2>
+                <button class="btn btn-secondary" onclick="exportToExcel()" style="width: 100%; margin-bottom: 12px;">📥 Export CSV Marksheet</button>
+                <button class="btn btn-secondary" onclick="exportJSONBackup()" style="width: 100%; margin-bottom: 12px;">💾 Export Full Backup (JSON)</button>
+                <label class="btn btn-secondary" style="width: 100%; display:block; text-align:center; margin-bottom: 12px; cursor:pointer;">
+                    📤 Restore from Backup (JSON)
+                    <input type="file" accept=".json" onchange="importJSONBackup(event)" style="display:none;">
+                </label>
+                <hr style="border-color: var(--card-border); margin: 16px 0;">
+                <h2 style="font-size:14px;">➕ Add New Student</h2>
+                <form onsubmit="addStudent(event)">
+                    <div class="form-group"><label>Name</label><input type="text" id="newStdName" required></div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>House</label>
+                            <select id="newStdHouse"><option>House A</option><option>House B</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="newStdCategory"><option>Senior</option><option>Junior</option></select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" style="width:100%;">Add Student</button>
+                </form>
+                <hr style="border-color: var(--card-border); margin: 16px 0;">
+                <button class="btn btn-danger" onclick="clearAllData()" style="width: 100%;">🔄 Reset Portal Data</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>
+                📊 Team Students Roster & Mapping
+            </h2>
+            <div class="search-bar no-print">
+                <input type="text" id="studentSearchInput" placeholder="🔍 Search student by name..." oninput="updateAllViews()">
+                <select id="studentFilterCategory" onchange="updateAllViews()" style="max-width:160px;">
+                    <option value="">All Categories</option>
+                    <option value="Senior">Senior</option>
+                    <option value="Junior">Junior</option>
+                </select>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" onclick="setSortKey('name')">Student Name<span class="sort-arrow" id="arrow-name"></span></th>
+                        <th class="sortable" onclick="setSortKey('house')">House<span class="sort-arrow" id="arrow-house"></span></th>
+                        <th class="sortable" onclick="setSortKey('category')">Category<span class="sort-arrow" id="arrow-category"></span></th>
+                        <th>Participated Programs</th>
+                        <th class="sortable" onclick="setSortKey('points')">Points<span class="sort-arrow" id="arrow-points"></span></th>
+                        <th class="admin-only">Manage</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- LIVE SCOREBOARD TAB (ADMIN ONLY) -->
+    <div id="scoreboardTab" class="tab-content admin-only">
+        <div class="grid-2">
+            <div class="house-card" style="background: rgba(30, 58, 138, 0.3);">
+                <h2>House A (TEAM-F)</h2>
+                <div class="score-val" id="house1Points">0</div>
+                <p style="color: var(--text-sub);">Overall Points</p>
+            </div>
+            <div class="house-card" style="background: rgba(127, 29, 29, 0.3);">
+                <h2>House B (TEAM-H)</h2>
+                <div class="score-val" id="house2Points">0</div>
+                <p style="color: var(--text-sub);">Overall Points</p>
+            </div>
+        </div>
+
+        <div class="card no-print" style="margin-top:24px;">
+            <h2>📊 House Comparison</h2>
+            <div class="grid-2">
+                <div class="chart-box"><canvas id="houseBarChart" height="220"></canvas></div>
+                <div class="chart-box"><canvas id="categoryPieChart" height="220"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>
+                🌟 Top Individual Champions Leaderboard
+                <button class="btn btn-secondary btn-sm no-print" onclick="printScoreboard()">📱 Print Scoreboard</button>
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student Name</th>
+                        <th>House</th>
+                        <th>Category</th>
+                        <th>Mapped Programs</th>
+                        <th>Points</th>
+                        <th class="no-print">Certificate</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody"></tbody>
+            </table>
+        </div>
+
+        <div class="grid-2" style="margin-top: 24px;">
+            <div class="card">
+                <h2>🏅 Senior Leaderboard</h2>
+                <table><thead><tr><th>Rank</th><th>Name</th><th>House</th><th>Points</th></tr></thead><tbody id="seniorLeaderboardBody"></tbody></table>
+            </div>
+            <div class="card">
+                <h2>🏅 Junior Leaderboard</h2>
+                <table><thead><tr><th>Rank</th><th>Name</th><th>House</th><th>Points</th></tr></thead><tbody id="juniorLeaderboardBody"></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- POINT ENTRY TAB (ADMIN ONLY) -->
+    <div id="scoreEntryTab" class="tab-content admin-only">
+        <div class="grid-2">
+            <div class="card">
+                <h2>⚡ Fast Event Point Logger</h2>
+                <form onsubmit="savePoints(event)">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="entryCategorySelect" onchange="onCategoryChangeInEntry()" required>
+                            <option value="Senior">Senior</option>
+                            <option value="Junior">Junior</option>
+                            <option value="Group">Group</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Program Name</label>
+                        <select id="entryProgram" required></select>
+                    </div>
+                    <div class="form-group" id="studentSelectGroup">
+                        <label>Participant Student</label>
+                        <select id="entryStudent" required></select>
+                    </div>
+                    <div class="form-group" id="houseSelectGroup" style="display:none;">
+                        <label>Winning House (Group Event)</label>
+                        <select id="entryHouse">
+                            <option value="House A">House A</option>
+                            <option value="House B">House B</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Award Rank / Position</label>
+                        <select id="entryPosition" required>
+                            <option value="10">🥇 1st Place (10 Pts)</option>
+                            <option value="7">🥈 2nd Place (7 Pts)</option>
+                            <option value="5">🥉 3rd Place (5 Pts)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Record Points</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📜 Live Result Logs</h2>
+                <div class="search-bar">
+                    <input type="text" id="logSearchInput" placeholder="🔍 Search logs..." oninput="updateAllViews()">
+                </div>
+                <div style="max-height: 380px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Program</th>
+                                <th>Participant</th>
+                                <th>Pts</th>
+                                <th>Certificate</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultLogBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MASTER PROGRAMS TAB (ADMIN ONLY) -->
+    <div id="programsTab" class="tab-content admin-only">
+        <div class="card">
+            <h2>➕ Add Custom Program</h2>
+            <form onsubmit="addProgram(event)" style="display:flex; gap:12px; flex-wrap:wrap;">
+                <select id="newProgCategory" style="flex:1; min-width:140px;">
+                    <option value="Senior">Senior</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Group">Group</option>
+                </select>
+                <input type="text" id="newProgName" placeholder="Program Title" required style="flex:2; min-width:180px;">
+                <button type="submit" class="btn">Add Program</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📜 All Configured Sports Programs List</h2>
+            <div class="search-bar">
+                <input type="text" id="progSearchInput" placeholder="🔍 Search programs..." oninput="updateAllViews()">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" onclick="setProgSortKey('category')">Category</th>
+                        <th class="sortable" onclick="setProgSortKey('name')">Program Title</th>
+                    </tr>
+                </thead>
+                <tbody id="programTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- EVENT SCHEDULE TAB (viewable by all logged-in users) -->
+    <div id="scheduleTab" class="tab-content">
+        <div class="card admin-only">
+            <h2>➕ Add Schedule Entry</h2>
+            <form onsubmit="addScheduleEntry(event)" style="display:flex; gap:12px; flex-wrap:wrap;">
+                <input type="text" id="schedProgram" placeholder="Program Name" required style="flex:2; min-width:160px;">
+                <input type="time" id="schedTime" required style="flex:1; min-width:120px;">
+                <input type="text" id="schedVenue" placeholder="Ground / Venue" style="flex:1; min-width:140px;">
+                <select id="schedCategory" style="flex:1; min-width:120px;">
+                    <option value="Senior">Senior</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Group">Group</option>
+                </select>
+                <button type="submit" class="btn">Add</button>
+            </form>
+        </div>
+        <div class="card">
+            <h2>📅 Today's Event Timetable</h2>
+            <table>
+                <thead><tr><th>Time</th><th>Program</th><th>Category</th><th>Venue</th><th class="admin-only">Action</th></tr></thead>
+                <tbody id="scheduleTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    /* =========================================================
+       FIREBASE SETUP
+       -------------------------------------------------------
+       Replace the values below with YOUR OWN Firebase project
+       config (see deployment notes for how to create one).
+       Everything falls back to a local-only demo mode if the
+       config is left blank, so the portal still runs, but data
+       will NOT sync across devices and will NOT be secure until
+       this is filled in.
+    ========================================================= */
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    let fbReady = false;
+    let auth, dbRef;
+    try {
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            dbRef = firebase.firestore();
+            fbReady = true;
+        }
+    } catch (err) {
+        console.error("Firebase init failed:", err);
+    }
+
+    /* =========================================================
+       LOCAL STATE (mirrors Firestore in real-time, or acts as
+       the only store in offline demo mode)
+    ========================================================= */
+    const defaultPrograms = [
+        { name: "Race 500", category: "Senior" }, { name: "Relay", category: "Senior" },
+        { name: "Shot Put", category: "Senior" }, { name: "Javelin Throw", category: "Senior" },
+        { name: "High Jump", category: "Senior" }, { name: "Long Jump", category: "Senior" },
+        { name: "Wicket To Wicket", category: "Senior" }, { name: "Sack Race", category: "Senior" },
+        { name: "Frog Jump", category: "Senior" }, { name: "Balloon Breaking", category: "Senior" },
+        { name: "Balloon Pooping", category: "Senior" }, { name: "Spoon Race", category: "Senior" },
+        { name: "Needle Filling", category: "Senior" }, { name: "Tail Drawing", category: "Senior" },
+        { name: "Blind Walk", category: "Senior" }, { name: "Water Filling", category: "Senior" },
+        { name: "Isharo Ki Zaban", category: "Senior" }, { name: "Brick Balancing", category: "Senior" },
+        { name: "Biscuit Eating", category: "Senior" }, { name: "Stone Picking", category: "Senior" },
+        { name: "Push Up", category: "Senior" }, { name: "Chess", category: "Senior" },
+        { name: "Carrom", category: "Senior" }, { name: "Arm Wrestling", category: "Senior" },
+        { name: "Plank Challenge", category: "Senior" }, { name: "Langdi", category: "Senior" },
+        { name: "Monkey Bar Challenge", category: "Senior" }, { name: "Lagori", category: "Senior" },
+        { name: "Gitti", category: "Senior" },
+        { name: "Race 100", category: "Junior" }, { name: "Relay", category: "Junior" },
+        { name: "Shot Put", category: "Junior" }, { name: "Javelin Throw", category: "Junior" },
+        { name: "High Jump", category: "Junior" }, { name: "Long Jump", category: "Junior" },
+        { name: "Wicket To Wicket", category: "Junior" }, { name: "Sack Race", category: "Junior" },
+        { name: "Frog Jump", category: "Junior" }, { name: "Balloon Breaking", category: "Junior" },
+        { name: "Balloon Pooping", category: "Junior" }, { name: "Spoon Race", category: "Junior" },
+        { name: "Needle Filling", category: "Junior" }, { name: "Tail Drawing", category: "Junior" },
+        { name: "Blind Walk", category: "Junior" }, { name: "Water Filling", category: "Junior" },
+        { name: "Isharo Ki Zaban", category: "Junior" }, { name: "Brick Balancing", category: "Junior" },
+        { name: "Biscuit Eating", category: "Junior" }, { name: "Stone Picking", category: "Junior" },
+        { name: "Musical Chair", category: "Junior" }, { name: "Chocolate Eating", category: "Junior" },
+        { name: "Plastic Cricket", category: "Junior" }, { name: "Carrom", category: "Junior" },
+        { name: "Arm Wrestling", category: "Junior" }, { name: "Langdi", category: "Junior" },
+        { name: "Monkey Bar Challenge", category: "Junior" }, { name: "Discus Throw", category: "Junior" },
+        { name: "Cricket", category: "Group" }, { name: "Kabaddi", category: "Group" },
+        { name: "Football", category: "Group" }, { name: "Tug Of War", category: "Group" },
+        { name: "Throwball", category: "Group" }, { name: "Dodgeball", category: "Group" },
+        { name: "Futsal", category: "Group" }
+    ];
+
+    const defaultStudents = [
+        { id: 101, name: "Huzaifa (Leader)", house: "House A", category: "Senior", programs: [] },
+        { id: 102, name: "Abdul Ahad (Assistant)", house: "House A", category: "Senior", programs: [] },
+        { id: 103, name: "Usaid", house: "House A", category: "Senior", programs: [] },
+        { id: 104, name: "Farhan", house: "House A", category: "Senior", programs: [] },
+        { id: 105, name: "Qamar", house: "House A", category: "Senior", programs: [] },
+        { id: 106, name: "Adeeb", house: "House A", category: "Senior", programs: [] },
+        { id: 107, name: "Faraz", house: "House A", category: "Senior", programs: [] },
+        { id: 108, name: "Rehan Rehman", house: "House A", category: "Senior", programs: [] },
+        { id: 109, name: "Alisher", house: "House A", category: "Senior", programs: [] },
+        { id: 110, name: "Saqib", house: "House A", category: "Senior", programs: [] },
+        { id: 111, name: "Shafi", house: "House A", category: "Senior", programs: [] },
+        { id: 112, name: "Maruf", house: "House A", category: "Senior", programs: [] },
+        { id: 113, name: "Ayan", house: "House A", category: "Senior", programs: [] },
+        { id: 114, name: "Jishan", house: "House A", category: "Senior", programs: [] },
+        { id: 115, name: "Shahbaaz", house: "House A", category: "Senior", programs: [] },
+        { id: 116, name: "Imamuddin", house: "House A", category: "Senior", programs: [] },
+        { id: 117, name: "Hamza", house: "House A", category: "Senior", programs: [] },
+        { id: 118, name: "Shadab", house: "House A", category: "Senior", programs: [] },
+        { id: 119, name: "Jilani", house: "House A", category: "Senior", programs: [] },
+        { id: 120, name: "Tazammul", house: "House A", category: "Junior", programs: [] },
+        { id: 121, name: "Yaseen", house: "House A", category: "Junior", programs: [] },
+        { id: 122, name: "Altamash", house: "House A", category: "Junior", programs: [] },
+        { id: 123, name: "Sabeeh", house: "House A", category: "Junior", programs: [] },
+        { id: 124, name: "Mannan", house: "House A", category: "Junior", programs: [] },
+        { id: 125, name: "Farhan (Jr)", house: "House A", category: "Junior", programs: [] },
+        { id: 126, name: "Asgar", house: "House A", category: "Junior", programs: [] },
+        { id: 127, name: "Rehan", house: "House A", category: "Junior", programs: [] },
+        { id: 128, name: "Saqlain", house: "House A", category: "Junior", programs: [] },
+        { id: 129, name: "Bilal", house: "House A", category: "Junior", programs: [] },
+        { id: 130, name: "Sanaul", house: "House A", category: "Junior", programs: [] },
+        { id: 131, name: "Sufyan", house: "House A", category: "Junior", programs: [] },
+        { id: 132, name: "Abdullah", house: "House A", category: "Junior", programs: [] },
+        { id: 201, name: "Farhan Akhtar (Leader)", house: "House B", category: "Senior", programs: [] },
+        { id: 202, name: "Hasnain Ateequ (Assistant)", house: "House B", category: "Senior", programs: [] },
+        { id: 203, name: "Jamshed", house: "House B", category: "Senior", programs: [] },
+        { id: 204, name: "Owais", house: "House B", category: "Senior", programs: [] },
+        { id: 205, name: "Arsh", house: "House B", category: "Senior", programs: [] },
+        { id: 206, name: "Athif", house: "House B", category: "Senior", programs: [] },
+        { id: 207, name: "Washid", house: "House B", category: "Senior", programs: [] },
+        { id: 208, name: "Monis", house: "House B", category: "Senior", programs: [] },
+        { id: 209, name: "Uzair", house: "House B", category: "Senior", programs: [] },
+        { id: 210, name: "Hasnain Chamnad", house: "House B", category: "Senior", programs: [] },
+        { id: 211, name: "Rayyan", house: "House B", category: "Senior", programs: [] },
+        { id: 212, name: "Amanat", house: "House B", category: "Senior", programs: [] },
+        { id: 213, name: "Hasan", house: "House B", category: "Senior", programs: [] },
+        { id: 214, name: "Alfaiz", house: "House B", category: "Senior", programs: [] },
+        { id: 215, name: "Muhammed Ali (Sr)", house: "House B", category: "Senior", programs: [] },
+        { id: 216, name: "Arham", house: "House B", category: "Senior", programs: [] },
+        { id: 217, name: "Fazal", house: "House B", category: "Senior", programs: [] },
+        { id: 218, name: "Ahmed Raza", house: "House B", category: "Senior", programs: [] },
+        { id: 219, name: "Rahmatullah", house: "House B", category: "Senior", programs: [] },
+        { id: 220, name: "Mustafa", house: "House B", category: "Junior", programs: [] },
+        { id: 221, name: "Saif", house: "House B", category: "Junior", programs: [] },
+        { id: 222, name: "Hasnain", house: "House B", category: "Junior", programs: [] },
+        { id: 223, name: "Hammad", house: "House B", category: "Junior", programs: [] },
+        { id: 224, name: "Moinuddin", house: "House B", category: "Junior", programs: [] },
+        { id: 225, name: "Muhammed", house: "House B", category: "Junior", programs: [] },
+        { id: 226, name: "Arif", house: "House B", category: "Junior", programs: [] },
+        { id: 227, name: "Hassan", house: "House B", category: "Junior", programs: [] },
+        { id: 228, name: "Hasnain An", house: "House B", category: "Junior", programs: [] },
+        { id: 229, name: "Fahad", house: "House B", category: "Junior", programs: [] },
+        { id: 230, name: "Hasnain Ra", house: "House B", category: "Junior", programs: [] },
+        { id: 231, name: "Asad", house: "House B", category: "Junior", programs: [] },
+        { id: 232, name: "Muhammed Ali (Jr)", house: "House B", category: "Junior", programs: [] },
+        { id: 233, name: "Tamim", house: "House B", category: "Junior", programs: [] },
+        { id: 234, name: "Muzammil", house: "House B", category: "Junior", programs: [] }
+    ];
+
+    let db = {
+        students: [],
+        programs: [],
+        results: [],
+        schedule: [],
+        announcement: "",
+        currentUser: null
+    };
+
+    let sortKey = 'points', sortDir = 'desc';
+    let progSortKey = 'category', progSortDir = 'asc';
+    let houseChart, categoryChart;
+
+    function toast(msg, isError) {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = 'toast' + (isError ? ' error' : '');
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+    }
+
+    /* =========================================================
+       LOGIN  (Firebase Auth when configured, demo mode fallback)
+       -------------------------------------------------------
+       Real setup (recommended): create 3 users in Firebase
+       Authentication (Email/Password) named
+         team-f@qiac.local, team-h@qiac.local, msh@qiac.local
+       and a matching doc in a "roles" collection for each UID:
+         { role: "TEAM-F" | "TEAM-H" | "ADMIN", house: "...", label: "..." }
+       This means no password is ever stored in this file, and
+       Google's infrastructure -- not client-side JS -- checks it.
+    ========================================================= */
+    const USERNAME_MAP = {
+        "TEAM-F": { email: "team-f@qiac.local", role: "TEAM-F", house: "House A", label: "Team F (House A)" },
+        "TEAM-H": { email: "team-h@qiac.local", role: "TEAM-H", house: "House B", label: "Team H (House B)" },
+        "MSH":    { email: "msh@qiac.local",    role: "ADMIN",  house: "ALL",     label: "Admin (MSH)" }
+    };
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const uRaw = document.getElementById('loginUser').value.trim().toUpperCase();
+        const p = document.getElementById('loginPass').value.trim();
+        const errEl = document.getElementById('loginError');
+        errEl.style.display = 'none';
+        const mapping = USERNAME_MAP[uRaw];
+
+        if (!mapping) {
+            errEl.textContent = "Unknown username.";
+            errEl.style.display = 'block';
+            return;
+        }
+
+        const loginBtn = document.getElementById('loginBtn');
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Checking...";
+
+        if (fbReady) {
+            try {
+                const cred = await auth.signInWithEmailAndPassword(mapping.email, p);
+                const roleDoc = await dbRef.collection('roles').doc(cred.user.uid).get();
+                if (!roleDoc.exists) {
+                    errEl.textContent = "No role assigned to this account. Contact admin.";
+                    errEl.style.display = 'block';
+                    await auth.signOut();
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = "Login to Portal";
+                    return;
+                }
+                const roleData = roleDoc.data();
+                completeLogin({ role: roleData.role, house: roleData.house, label: roleData.label });
+            } catch (err) {
+                console.error(err);
+                errEl.textContent = "Invalid credentials.";
+                errEl.style.display = 'block';
+                loginBtn.disabled = false;
+                loginBtn.textContent = "Login to Portal";
+            }
+        } else {
+            // Offline demo fallback: hash comparison instead of plaintext.
+            // NOTE: still not real security -- configure Firebase for that.
+            const hash = await sha256(p);
+            const demoHashes = JSON.parse(localStorage.getItem('qiac_demo_hashes') || 'null') || await seedDemoHashes();
+            if (demoHashes[uRaw] === hash) {
+                completeLogin({ role: mapping.role, house: mapping.house, label: mapping.label + " [DEMO MODE]" });
+            } else {
+                errEl.textContent = "Invalid credentials (demo mode).";
+                errEl.style.display = 'block';
+                loginBtn.disabled = false;
+                loginBtn.textContent = "Login to Portal";
+            }
+        }
+    }
+
+    async function sha256(text) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function seedDemoHashes() {
+        // First-run only: lets the portal work with zero setup.
+        // Change these default demo passwords before real use.
+        const seed = { "TEAM-F": await sha256("teamf2026"), "TEAM-H": await sha256("teamh2026"), "MSH": await sha256("admin2026") };
+        localStorage.setItem('qiac_demo_hashes', JSON.stringify(seed));
+        return seed;
+    }
+
+    function completeLogin(userInfo) {
+        db.currentUser = userInfo;
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('currentUserBadge').innerText = userInfo.label;
+
+        if (userInfo.role === "ADMIN") {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+        } else {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            switchTab('studentsTab');
+        }
+
+        document.getElementById('announcementBar').style.display = 'flex';
+        attachDataListeners();
+    }
+
+    function logout() {
+        if (fbReady && auth.currentUser) auth.signOut();
+        location.reload();
+    }
+
+    /* =========================================================
+       DATA LAYER  (Firestore realtime listeners, or localStorage)
+    ========================================================= */
+    function attachDataListeners() {
+        if (fbReady) {
+            dbRef.collection('students').onSnapshot(async snap => {
+                if (snap.empty) {
+                    // one-time seed
+                    const batch = dbRef.batch();
+                    defaultStudents.forEach(s => batch.set(dbRef.collection('students').doc(String(s.id)), s));
+                    await batch.commit();
+                    return;
+                }
+                db.students = snap.docs.map(d => ({ ...d.data(), id: isNaN(d.id) ? d.id : Number(d.id) }));
+                updateAllViews();
+            });
+            dbRef.collection('programs').onSnapshot(async snap => {
+                if (snap.empty) {
+                    const batch = dbRef.batch();
+                    defaultPrograms.forEach(p => batch.set(dbRef.collection('programs').doc(), p));
+                    await batch.commit();
+                    return;
+                }
+                db.programs = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+                populateProgramDropdowns();
+                updateAllViews();
+            });
+            dbRef.collection('results').orderBy('timestamp', 'desc').onSnapshot(snap => {
+                db.results = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+                updateAllViews();
+            });
+            dbRef.collection('schedule').orderBy('time').onSnapshot(snap => {
+                db.schedule = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+                updateAllViews();
+            });
+            dbRef.collection('meta').doc('announcement').onSnapshot(doc => {
+                db.announcement = doc.exists ? (doc.data().text || "") : "";
+                document.getElementById('announcementText').textContent = db.announcement;
+            });
+        } else {
+            db.students = JSON.parse(localStorage.getItem('qiac_v8_students')) || defaultStudents;
+            db.programs = JSON.parse(localStorage.getItem('qiac_v8_programs')) || defaultPrograms;
+            db.results = JSON.parse(localStorage.getItem('qiac_v8_results')) || [];
+            db.schedule = JSON.parse(localStorage.getItem('qiac_v8_schedule')) || [];
+            db.announcement = localStorage.getItem('qiac_v8_announcement') || "";
+            document.getElementById('announcementText').textContent = db.announcement;
+            populateProgramDropdowns();
+            updateAllViews();
+        }
+    }
+
+    function saveLocalOnly() {
+        localStorage.setItem('qiac_v8_students', JSON.stringify(db.students));
+        localStorage.setItem('qiac_v8_programs', JSON.stringify(db.programs));
+        localStorage.setItem('qiac_v8_results', JSON.stringify(db.results));
+        localStorage.setItem('qiac_v8_schedule', JSON.stringify(db.schedule));
+        localStorage.setItem('qiac_v8_announcement', db.announcement);
+        updateAllViews();
+    }
+
+    /* =========================================================
+       TAB SWITCHING
+    ========================================================= */
+    function switchTab(tabId) {
+        const isAdmin = db.currentUser && db.currentUser.role === "ADMIN";
+        if (!isAdmin && tabId !== "studentsTab" && tabId !== "scheduleTab") {
+            toast("Access Denied! Teams may only view Student Mapping & Schedule.", true);
+            return;
+        }
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) targetTab.classList.add('active');
+
+        if (tabId === 'scoreboardTab') { document.getElementById('navScoreboard').classList.add('active'); renderCharts(); }
+        if (tabId === 'studentsTab') document.getElementById('navStudents').classList.add('active');
+        if (tabId === 'scoreEntryTab') document.getElementById('navScoreEntry').classList.add('active');
+        if (tabId === 'programsTab') document.getElementById('navPrograms').classList.add('active');
+        if (tabId === 'scheduleTab') document.getElementById('navSchedule').classList.add('active');
+    }
+
+    /* =========================================================
+       STUDENT PROGRAM MAPPING
+    ========================================================= */
+    function loadStudentsAndProgramsByCategory() {
+        const cat = document.getElementById('mapCategory').value;
+        const studentSelect = document.getElementById('mapStudentSelect');
+        const mapProgramSelect = document.getElementById('mapProgramSelect');
+
+        studentSelect.innerHTML = '<option value="">-- Choose Student --</option>';
+        mapProgramSelect.innerHTML = '<option value="">-- Select Program --</option>';
+        if (!cat) return;
+
+        let filtered = db.students.filter(s => s.category === cat);
+        if (db.currentUser.role !== "ADMIN") filtered = filtered.filter(s => s.house === db.currentUser.house);
+
+        filtered.forEach(s => studentSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        db.programs.filter(p => p.category === cat).forEach(p => mapProgramSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+        renderProgramCheckboxes();
+    }
+
+    function addSelectedProgramToStudent() {
+        const progName = document.getElementById('mapProgramSelect').value;
+        const studentId = document.getElementById('mapStudentSelect').value;
+        if (!studentId) return toast("Pehle Student Select Karen!", true);
+        if (!progName) return toast("Pehle Dropdown se Program Select Karen!", true);
+
+        const student = db.students.find(s => String(s.id) === String(studentId));
+        if (student && !(student.programs || []).includes(progName)) {
+            student.programs = [...(student.programs || []), progName];
+            renderProgramCheckboxes();
+        }
+    }
+
+    function renderProgramCheckboxes() {
+        const cat = document.getElementById('mapCategory').value;
+        const studentId = document.getElementById('mapStudentSelect').value;
+        const box = document.getElementById('programCheckboxes');
+        box.innerHTML = '';
+        if (!cat) return;
+
+        const student = db.students.find(s => String(s.id) === String(studentId));
+        const mapped = student ? (student.programs || []) : [];
+
+        db.programs.filter(p => p.category === cat).forEach(p => {
+            const isChecked = mapped.includes(p.name) ? 'checked' : '';
+            box.innerHTML += `<div class="checkbox-item"><input type="checkbox" name="stdMappedProgs" value="${p.name}" ${isChecked}><label>${p.name}</label></div>`;
+        });
+    }
+
+    async function saveStudentProgramMapping(e) {
+        e.preventDefault();
+        const studentId = document.getElementById('mapStudentSelect').value;
+        if (!studentId) return;
+
+        const checkedBoxes = document.querySelectorAll('input[name="stdMappedProgs"]:checked');
+        const selectedPrograms = Array.from(checkedBoxes).map(cb => cb.value);
+        const student = db.students.find(s => String(s.id) === String(studentId));
+        if (!student) return;
+        student.programs = selectedPrograms;
+
+        if (fbReady) {
+            await dbRef.collection('students').doc(String(student.id)).update({ programs: selectedPrograms });
+        } else {
+            saveLocalOnly();
+        }
+        toast(`Programs updated for ${student.name}!`);
+    }
+
+    /* =========================================================
+       ADD / EDIT / DELETE STUDENT (admin)
+    ========================================================= */
+    async function addStudent(e) {
+        e.preventDefault();
+        const name = document.getElementById('newStdName').value.trim();
+        const house = document.getElementById('newStdHouse').value;
+        const category = document.getElementById('newStdCategory').value;
+        if (!name) return;
+        const newId = Math.max(0, ...db.students.map(s => Number(s.id) || 0)) + 1;
+        const newStudent = { id: newId, name, house, category, programs: [] };
+
+        if (fbReady) {
+            await dbRef.collection('students').doc(String(newId)).set(newStudent);
+        } else {
+            db.students.push(newStudent);
+            saveLocalOnly();
+        }
+        document.getElementById('newStdName').value = '';
+        toast(`Added ${name} to roster.`);
+    }
+
+    function openEditStudentModal(studentId) {
+        const student = db.students.find(s => String(s.id) === String(studentId));
+        if (!student) return;
+        const modal = document.getElementById('modalContent');
+        modal.innerHTML = `
+            <h2 style="margin-bottom:16px;">Edit Student</h2>
+            <div class="form-group"><label>Name</label><input type="text" id="editStdName" value="${student.name}"></div>
+            <div class="grid-2">
+                <div class="form-group"><label>House</label>
+                    <select id="editStdHouse"><option ${student.house==='House A'?'selected':''}>House A</option><option ${student.house==='House B'?'selected':''}>House B</option></select>
+                </div>
+                <div class="form-group"><label>Category</label>
+                    <select id="editStdCategory"><option ${student.category==='Senior'?'selected':''}>Senior</option><option ${student.category==='Junior'?'selected':''}>Junior</option></select>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn" style="flex:1;" onclick="saveEditStudent('${studentId}')">Save</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="deleteStudent('${studentId}')">Delete</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal()">Cancel</button>
+            </div>`;
+        document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    async function saveEditStudent(studentId) {
+        const student = db.students.find(s => String(s.id) === String(studentId));
+        if (!student) return;
+        student.name = document.getElementById('editStdName').value.trim();
+        student.house = document.getElementById('editStdHouse').value;
+        student.category = document.getElementById('editStdCategory').value;
+
+        if (fbReady) {
+            await dbRef.collection('students').doc(String(student.id)).update({ name: student.name, house: student.house, category: student.category });
+        } else {
+            saveLocalOnly();
+        }
+        closeModal();
+        toast("Student updated.");
+    }
+
+    async function deleteStudent(studentId) {
+        if (!confirm("Delete this student permanently? Their logged results will remain in the history.")) return;
+        if (fbReady) {
+            await dbRef.collection('students').doc(String(studentId)).delete();
+        } else {
+            db.students = db.students.filter(s => String(s.id) !== String(studentId));
+            saveLocalOnly();
+        }
+        closeModal();
+        toast("Student removed.");
+    }
+
+    function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+    /* =========================================================
+       POINT ENTRY  (with duplicate-entry guard)
+    ========================================================= */
+    function populateProgramDropdowns() {
+        if (document.getElementById('entryCategorySelect')) onCategoryChangeInEntry();
+    }
+
+    function onCategoryChangeInEntry() {
+        if (!db.currentUser || db.currentUser.role !== "ADMIN") return;
+        const cat = document.getElementById('entryCategorySelect').value;
+        const entryProg = document.getElementById('entryProgram');
+        entryProg.innerHTML = '';
+        db.programs.filter(p => p.category === cat).forEach(p => entryProg.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+
+        if (cat === 'Group') {
+            document.getElementById('studentSelectGroup').style.display = 'none';
+            document.getElementById('houseSelectGroup').style.display = 'block';
+        } else {
+            document.getElementById('studentSelectGroup').style.display = 'block';
+            document.getElementById('houseSelectGroup').style.display = 'none';
+            const entryStudent = document.getElementById('entryStudent');
+            entryStudent.innerHTML = '';
+            db.students.filter(s => s.category === cat).forEach(s => entryStudent.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        }
+    }
+
+    async function savePoints(e) {
+        e.preventDefault();
+        if (db.currentUser.role !== "ADMIN") return toast("Only Admin can enter points!", true);
+
+        const cat = document.getElementById('entryCategorySelect').value;
+        const progName = document.getElementById('entryProgram').value;
+        const pts = parseInt(document.getElementById('entryPosition').value);
+
+        let resultEntry = { category: cat, program: progName, points: pts, timestamp: Date.now() };
+
+        if (cat === 'Group') {
+            resultEntry.studentName = "GROUP EVENT";
+            resultEntry.house = document.getElementById('entryHouse').value;
+            // duplicate guard: same house shouldn't win the same group program twice
+            const dup = db.results.find(r => r.category === cat && r.program === progName && r.house === resultEntry.house);
+            if (dup && !confirm(`${resultEntry.house} already has a result logged for "${progName}". Log this anyway?`)) return;
+        } else {
+            const studentId = document.getElementById('entryStudent').value;
+            const student = db.students.find(s => String(s.id) === String(studentId));
+            if (!student) return;
+            resultEntry.studentId = student.id;
+            resultEntry.studentName = student.name;
+            resultEntry.house = student.house;
+            // duplicate guard: same student shouldn't get points twice for the same program
+            const dup = db.results.find(r => String(r.studentId) === String(student.id) && r.program === progName);
+            if (dup) {
+                if (!confirm(`${student.name} already has a result logged for "${progName}" (${dup.points} pts). Log this as an additional entry anyway?`)) return;
+            }
+        }
+
+        if (fbReady) {
+            await dbRef.collection('results').add(resultEntry);
+        } else {
+            resultEntry.id = Date.now();
+            db.results.unshift(resultEntry);
+            saveLocalOnly();
+        }
+        toast("Points Logged!");
+    }
+
+    async function deleteResult(id) {
+        if (db.currentUser.role !== "ADMIN") return toast("Admin Access Required!", true);
+        if (!confirm("Undo this result entry?")) return;
+        if (fbReady) {
+            await dbRef.collection('results').doc(String(id)).delete();
+        } else {
+            db.results = db.results.filter(r => r.id !== id);
+            saveLocalOnly();
+        }
+    }
+
+    /* =========================================================
+       MASTER PROGRAMS
+    ========================================================= */
+    async function addProgram(e) {
+        e.preventDefault();
+        if (db.currentUser.role !== "ADMIN") return;
+        const category = document.getElementById('newProgCategory').value;
+        const name = document.getElementById('newProgName').value.trim();
+        if (!name) return;
+
+        if (fbReady) {
+            await dbRef.collection('programs').add({ name, category });
+        } else {
+            db.programs.push({ name, category });
+            saveLocalOnly();
+        }
+        document.getElementById('newProgName').value = '';
+        toast("Program added.");
+    }
+
+    /* =========================================================
+       EVENT SCHEDULE
+    ========================================================= */
+    async function addScheduleEntry(e) {
+        e.preventDefault();
+        if (db.currentUser.role !== "ADMIN") return;
+        const program = document.getElementById('schedProgram').value.trim();
+        const time = document.getElementById('schedTime').value;
+        const venue = document.getElementById('schedVenue').value.trim();
+        const category = document.getElementById('schedCategory').value;
+        if (!program || !time) return;
+
+        const entry = { program, time, venue, category };
+        if (fbReady) {
+            await dbRef.collection('schedule').add(entry);
+        } else {
+            entry.id = Date.now();
+            db.schedule.push(entry);
+            db.schedule.sort((a,b) => a.time.localeCompare(b.time));
+            saveLocalOnly();
+        }
+        document.getElementById('schedProgram').value = '';
+        document.getElementById('schedVenue').value = '';
+        toast("Schedule entry added.");
+    }
+
+    async function deleteScheduleEntry(id) {
+        if (db.currentUser.role !== "ADMIN") return;
+        if (!confirm("Remove this schedule entry?")) return;
+        if (fbReady) {
+            await dbRef.collection('schedule').doc(String(id)).delete();
+        } else {
+            db.schedule = db.schedule.filter(s => s.id !== id);
+            saveLocalOnly();
+        }
+    }
+
+    /* =========================================================
+       ANNOUNCEMENT BANNER
+    ========================================================= */
+    function openAnnouncementModal() {
+        const modal = document.getElementById('modalContent');
+        modal.innerHTML = `
+            <h2 style="margin-bottom:16px;">Edit Announcement</h2>
+            <div class="form-group"><input type="text" id="announcementInput" value="${(db.announcement||'').replace(/"/g,'&quot;')}" placeholder="e.g. Next: Relay Race, Ground 2"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn" style="flex:1;" onclick="saveAnnouncement()">Save</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal()">Cancel</button>
+            </div>`;
+        document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    async function saveAnnouncement() {
+        const text = document.getElementById('announcementInput').value.trim();
+        if (fbReady) {
+            await dbRef.collection('meta').doc('announcement').set({ text, updatedAt: Date.now() });
+        } else {
+            db.announcement = text;
+            saveLocalOnly();
+        }
+        closeModal();
+        toast("Announcement updated.");
+    }
+
+    /* =========================================================
+       CERTIFICATE GENERATOR
+    ========================================================= */
+    function positionLabel(pts) {
+        if (pts >= 10) return "1st Place";
+        if (pts >= 7) return "2nd Place";
+        if (pts >= 5) return "3rd Place";
+        return "Participant";
+    }
+
+    function generateCertificate(name, program, pts) {
+        const rankText = positionLabel(pts);
+        const win = window.open('', '_blank');
+        win.document.write(`
+            <html><head><title>Certificate - ${name}</title>
+            <style>
+                body { font-family: 'Georgia', serif; text-align:center; padding:60px; background:#fdfaf3; }
+                .cert { border: 10px solid #d97706; padding: 60px; max-width: 800px; margin: 0 auto; background:#fff; }
+                h1 { font-size: 14px; letter-spacing: 4px; color:#94a3b8; text-transform:uppercase; }
+                h2 { font-size: 42px; color:#0f172a; margin: 20px 0; }
+                .name { font-size: 34px; color:#d97706; font-weight:bold; margin: 20px 0; border-bottom: 2px solid #d97706; display:inline-block; padding-bottom: 8px; }
+                .detail { font-size: 18px; color:#334155; margin: 10px 0; }
+                .rank { font-size: 24px; font-weight:bold; color:#0f172a; margin-top: 20px; }
+                .footer { margin-top: 60px; font-size: 13px; color:#94a3b8; }
+            </style></head>
+            <body onload="window.print()">
+                <div class="cert">
+                    <h1>Quvvathul Islam Arabic College</h1>
+                    <h2>Certificate of Achievement</h2>
+                    <p class="detail">This certificate is proudly presented to</p>
+                    <div class="name">${name}</div>
+                    <p class="detail">for outstanding performance in</p>
+                    <p class="detail" style="font-size:22px; font-weight:bold;">${program}</p>
+                    <p class="rank">🏅 ${rankText}</p>
+                    <p class="footer">Annual Sports Meet 2026</p>
+                </div>
+            </body></html>
+        `);
+        win.document.close();
+    }
+
+    /* =========================================================
+       SEARCH + SORT
+    ========================================================= */
+    function setSortKey(key) {
+        if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else { sortKey = key; sortDir = 'asc'; }
+        updateAllViews();
+    }
+    function setProgSortKey(key) {
+        if (progSortKey === key) progSortDir = progSortDir === 'asc' ? 'desc' : 'asc';
+        else { progSortKey = key; progSortDir = 'asc'; }
+        updateAllViews();
+    }
+
+    /* =========================================================
+       RENDER EVERYTHING
+    ========================================================= */
+    function updateAllViews() {
+        if (!db.currentUser) return;
+        const studentScores = {};
+        db.results.forEach(r => { if (r.studentId != null) studentScores[r.studentId] = (studentScores[r.studentId] || 0) + r.points; });
+
+        // ---- Roster table ----
+        const stdBody = document.getElementById('studentTableBody');
+        stdBody.innerHTML = '';
+        let listStudents = [...db.students];
+        if (db.currentUser.role !== "ADMIN") listStudents = listStudents.filter(s => s.house === db.currentUser.house);
+
+        const searchEl = document.getElementById('studentSearchInput');
+        const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
+        if (search) listStudents = listStudents.filter(s => s.name.toLowerCase().includes(search));
+
+        const catFilterEl = document.getElementById('studentFilterCategory');
+        const catFilter = catFilterEl ? catFilterEl.value : '';
+        if (catFilter) listStudents = listStudents.filter(s => s.category === catFilter);
+
+        listStudents = listStudents.map(s => ({ ...s, pts: studentScores[s.id] || 0 }));
+        listStudents.sort((a, b) => {
+            let av = a[sortKey], bv = b[sortKey];
+            if (sortKey === 'points') { av = a.pts; bv = b.pts; }
+            if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+            if (av < bv) return sortDir === 'asc' ? -1 : 1;
+            if (av > bv) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+        ['name','house','category','points'].forEach(k => {
+            const arrow = document.getElementById('arrow-' + k);
+            if (arrow) arrow.textContent = sortKey === k ? (sortDir === 'asc' ? '▲' : '▼') : '';
+        });
+
+        const isAdmin = db.currentUser.role === "ADMIN";
+        listStudents.forEach(s => {
+            const progsHtml = (s.programs || []).map(p => `<span class="badge badge-senior">${p}</span>`).join(' ') || '<em>None</em>';
+            stdBody.innerHTML += `
+                <tr>
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.house}</td>
+                    <td><span class="badge badge-junior">${s.category}</span></td>
+                    <td>${progsHtml}</td>
+                    <td><strong style="color:var(--accent);">${s.pts} Pts</strong></td>
+                    <td class="admin-only">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditStudentModal('${s.id}')">Edit</button>
+                    </td>
+                </tr>`;
+        });
+
+        if (isAdmin) {
+            // ---- House totals ----
+            let h1 = 0, h2 = 0;
+            db.results.forEach(r => {
+                if (r.house === "House A") h1 += r.points;
+                if (r.house === "House B") h2 += r.points;
+            });
+            document.getElementById('house1Points').innerText = h1;
+            document.getElementById('house2Points').innerText = h2;
+
+            // ---- Overall leaderboard ----
+            const sortedAll = [...db.students].map(s => ({ ...s, pts: studentScores[s.id] || 0 })).sort((a,b) => b.pts - a.pts).slice(0, 5);
+            document.getElementById('leaderboardBody').innerHTML = sortedAll.map((s, idx) => `
+                <tr>
+                    <td>#${idx + 1}</td>
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.house}</td>
+                    <td>${s.category}</td>
+                    <td>${(s.programs || []).join(', ') || '-'}</td>
+                    <td><strong style="color:var(--accent);">${s.pts}</strong></td>
+                    <td class="no-print">${s.pts > 0 ? `<button class="btn btn-sm" onclick="generateCertificate('${s.name.replace(/'/g,"\\'")}', '${(s.programs||[])[0]||'Sports Meet'}', ${s.pts})">🖨️</button>` : ''}</td>
+                </tr>`).join('');
+
+            // ---- Category leaderboards ----
+            const bySeniority = cat => [...db.students].filter(s => s.category === cat).map(s => ({ ...s, pts: studentScores[s.id] || 0 })).sort((a,b) => b.pts - a.pts).slice(0,5);
+            document.getElementById('seniorLeaderboardBody').innerHTML = bySeniority('Senior').map((s,i) => `<tr><td>#${i+1}</td><td>${s.name}</td><td>${s.house}</td><td>${s.pts}</td></tr>`).join('');
+            document.getElementById('juniorLeaderboardBody').innerHTML = bySeniority('Junior').map((s,i) => `<tr><td>#${i+1}</td><td>${s.name}</td><td>${s.house}</td><td>${s.pts}</td></tr>`).join('');
+
+            // ---- Result logs ----
+            let logs = [...db.results];
+            const logSearchEl = document.getElementById('logSearchInput');
+            const logSearch = logSearchEl ? logSearchEl.value.trim().toLowerCase() : '';
+            if (logSearch) logs = logs.filter(r => (r.program||'').toLowerCase().includes(logSearch) || (r.studentName||'').toLowerCase().includes(logSearch));
+            document.getElementById('resultLogBody').innerHTML = logs.map(r => `
+                <tr>
+                    <td>${r.category}</td>
+                    <td>${r.program}</td>
+                    <td>${r.studentName} (${r.house})</td>
+                    <td>+${r.points}</td>
+                    <td>${r.studentId != null ? `<button class="btn btn-sm" onclick="generateCertificate('${(r.studentName||'').replace(/'/g,"\\'")}', '${r.program.replace(/'/g,"\\'")}', ${r.points})">🖨️</button>` : '-'}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteResult('${r.id}')">Undo</button></td>
+                </tr>`).join('');
+
+            // ---- Master programs ----
+            let progs = [...db.programs];
+            const progSearchEl = document.getElementById('progSearchInput');
+            const progSearch = progSearchEl ? progSearchEl.value.trim().toLowerCase() : '';
+            if (progSearch) progs = progs.filter(p => p.name.toLowerCase().includes(progSearch));
+            progs.sort((a,b) => {
+                let av = a[progSortKey].toLowerCase(), bv = b[progSortKey].toLowerCase();
+                if (av < bv) return progSortDir === 'asc' ? -1 : 1;
+                if (av > bv) return progSortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+            document.getElementById('programTableBody').innerHTML = progs.map(p => `
+                <tr><td><span class="badge badge-senior">${p.category}</span></td><td><strong>${p.name}</strong></td></tr>`).join('');
+
+            renderCharts();
+        }
+
+        // ---- Schedule (visible to everyone) ----
+        const schedBody = document.getElementById('scheduleTableBody');
+        if (schedBody) {
+            const sorted = [...db.schedule].sort((a,b) => (a.time||'').localeCompare(b.time||''));
+            schedBody.innerHTML = sorted.map(s => `
+                <tr>
+                    <td>${s.time}</td>
+                    <td><strong>${s.program}</strong></td>
+                    <td><span class="badge badge-junior">${s.category}</span></td>
+                    <td>${s.venue || '-'}</td>
+                    <td class="admin-only"><button class="btn btn-danger btn-sm" onclick="deleteScheduleEntry('${s.id}')">Remove</button></td>
+                </tr>`).join('') || '<tr><td colspan="5"><em>No schedule entries yet.</em></td></tr>';
+        }
+    }
+
+    function renderCharts() {
+        const barCanvas = document.getElementById('houseBarChart');
+        const pieCanvas = document.getElementById('categoryPieChart');
+        if (!barCanvas || !pieCanvas || typeof Chart === 'undefined') return;
+
+        let h1 = 0, h2 = 0;
+        db.results.forEach(r => { if (r.house === "House A") h1 += r.points; if (r.house === "House B") h2 += r.points; });
+
+        const catTotals = { Senior: 0, Junior: 0, Group: 0 };
+        db.results.forEach(r => { catTotals[r.category] = (catTotals[r.category] || 0) + r.points; });
+
+        if (houseChart) houseChart.destroy();
+        houseChart = new Chart(barCanvas, {
+            type: 'bar',
+            data: { labels: ['House A', 'House B'], datasets: [{ label: 'Points', data: [h1, h2], backgroundColor: ['#3b82f6', '#ef4444'] }] },
+            options: { plugins: { legend: { display: false }, title: { display: true, text: 'House Points', color: '#f8fafc' } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+
+        if (categoryChart) categoryChart.destroy();
+        categoryChart = new Chart(pieCanvas, {
+            type: 'pie',
+            data: { labels: Object.keys(catTotals), datasets: [{ data: Object.values(catTotals), backgroundColor: ['#f59e0b', '#10b981', '#60a5fa'] }] },
+            options: { plugins: { legend: { labels: { color: '#f8fafc' } }, title: { display: true, text: 'Points by Category', color: '#f8fafc' } } }
+        });
+    }
+
+    /* =========================================================
+       PRINT-FRIENDLY SCOREBOARD
+    ========================================================= */
+    function printScoreboard() {
+        document.getElementById('scoreboardTab').classList.add('print-active');
+        window.print();
+        setTimeout(() => document.getElementById('scoreboardTab').classList.remove('print-active'), 500);
+    }
+
+    /* =========================================================
+       CSV EXPORT
+    ========================================================= */
+    function exportToExcel() {
+        if (db.currentUser.role !== "ADMIN") return;
+        let csv = "Category,Student Name,House,Programs,Points\n";
+        db.students.forEach(s => {
+            const pts = db.results.filter(r => String(r.studentId) === String(s.id)).reduce((a, b) => a + b.points, 0);
+            csv += `"${s.category}","${s.name}","${s.house}","${(s.programs||[]).join(';')}",${pts}\n`;
+        });
+        const link = document.createElement("a");
+        link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+        link.download = "QIAC_Scores_2026.csv";
+        link.click();
+    }
+
+    /* =========================================================
+       JSON BACKUP / RESTORE
+    ========================================================= */
+    function exportJSONBackup() {
+        if (db.currentUser.role !== "ADMIN") return;
+        const backup = { students: db.students, programs: db.programs, results: db.results, schedule: db.schedule, announcement: db.announcement, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `QIAC_Backup_${Date.now()}.json`;
+        link.click();
+    }
+
+    async function importJSONBackup(event) {
+        if (db.currentUser.role !== "ADMIN") return;
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!confirm("This will REPLACE all current students, programs, results and schedule with the backup file. Continue?")) { event.target.value = ''; return; }
+
+        const text = await file.text();
+        let backup;
+        try { backup = JSON.parse(text); } catch { toast("Invalid JSON file.", true); return; }
+
+        if (fbReady) {
+            const batch = dbRef.batch();
+            const collections = { students: 'students', programs: 'programs', results: 'results', schedule: 'schedule' };
+            for (const [key, colName] of Object.entries(collections)) {
+                const existing = await dbRef.collection(colName).get();
+                existing.forEach(d => batch.delete(d.ref));
+            }
+            await batch.commit();
+
+            const addBatch = dbRef.batch();
+            (backup.students || []).forEach(s => addBatch.set(dbRef.collection('students').doc(String(s.id)), s));
+            (backup.programs || []).forEach(p => addBatch.set(dbRef.collection('programs').doc(), p));
+            (backup.results || []).forEach(r => addBatch.set(dbRef.collection('results').doc(), r));
+            (backup.schedule || []).forEach(s => addBatch.set(dbRef.collection('schedule').doc(), s));
+            await addBatch.commit();
+            await dbRef.collection('meta').doc('announcement').set({ text: backup.announcement || '', updatedAt: Date.now() });
+        } else {
+            db.students = backup.students || [];
+            db.programs = backup.programs || [];
+            db.results = backup.results || [];
+            db.schedule = backup.schedule || [];
+            db.announcement = backup.announcement || '';
+            saveLocalOnly();
+        }
+        event.target.value = '';
+        toast("Backup restored successfully!");
+    }
+
+    function clearAllData() {
+        if (db.currentUser.role !== "ADMIN") return;
+        if (!confirm("Reset all settings and clear data? This cannot be undone.")) return;
+        if (fbReady) {
+            toast("For Firestore mode, please delete collections from the Firebase Console to fully reset.", true);
+        } else {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    /* Initial connection status message while Firebase boots */
+    window.addEventListener('load', () => {
+        const statusEl = document.getElementById('loginStatus');
+        if (fbReady) statusEl.textContent = "Connected to live portal database.";
+        else statusEl.textContent = "Running in local demo mode (no backend configured yet).";
+    });
+</script>
+</body>
+</html>
